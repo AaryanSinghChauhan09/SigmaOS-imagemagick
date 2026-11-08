@@ -1,4 +1,4 @@
-//! imagemagick model — image processing.
+//! Utility model for imagemagick (legacy compat).
 
 #[derive(Debug, Clone)]
 pub struct Image {
@@ -28,31 +28,26 @@ impl Default for Model {
 impl Model {
     pub fn new() -> Self { Self::default() }
 
-    pub fn load(&mut self, image: Image) { self.images.push(image); }
-
-    pub fn apply(&mut self, image: &str, op: &str, args: Vec<String>) -> bool {
-        if self.images.iter().any(|i| i.path == image) {
-            self.operations.push(Operation { image: image.into(), op: op.into(), args });
-            true
-        } else { false }
+    pub fn load(&mut self, path: &str, width: u32, height: u32, format: &str) -> String {
+        let id = format!("{:x}", self.images.len() + 1);
+        self.images.push(Image { path: path.into(), width, height, format: format.into() });
+        id
     }
 
-    pub fn convert(&mut self, src: &str, dst: &str, format: &str) -> bool {
-        if self.images.iter().any(|i| i.path == src) {
-            self.images.push(Image { path: dst.into(), width: 0, height: 0, format: format.into() });
-            true
-        } else { false }
+    pub fn operate(&mut self, image: &str, op: &str, args: Vec<String>) {
+        self.operations.push(Operation { image: image.into(), op: op.into(), args });
     }
+
+    pub fn list(&self) -> &[Image] { &self.images }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
-    fn load_apply_convert() {
+    fn legacy_model() {
         let mut m = Model::new();
-        m.load(Image { path: "in.png".into(), width: 100, height: 100, format: "png".into() });
-        assert!(m.apply("in.png", "resize", vec!["50%".into()]));
-        assert!(m.convert("in.png", "out.jpg", "jpg"));
+        m.load("/a.png", 100, 100, "png");
+        assert_eq!(m.images.len(), 1);
     }
 }
